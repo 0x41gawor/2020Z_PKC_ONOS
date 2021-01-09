@@ -46,16 +46,71 @@ class Network:
         print("\n======== S H O R T E S T   P A T H S ==========\n")
         for intent in self.intents:
             print("\nIntent ", intent.inElements[0], " ---> ", intent.outElements[0])
-            src_host = self.hosts[self.get_index_by_id(intent.inElements[0])]
-            dst_host = self.hosts[self.get_index_by_id(intent.outElements[0])]
+            src_host = self.hosts[self.get_host_index_by_id(intent.inElements[0])]
+            dst_host = self.hosts[self.get_host_index_by_id(intent.outElements[0])]
             print(src_host.ipAddresses[0], " ---> ", dst_host.ipAddresses[0])
             src_switch = src_host.connected_switch
             dst_switch = dst_host.connected_switch
             print(self.graph.shortest(src_switch, dst_switch))
 
-    # Funkcji podajemy id hosta odczytane z intenta a funkcja zwraca indeks tego hosta z listy self.hosts
-    def get_index_by_id(self, id):
+    #  Funkcji podajemy ip_adresy miedzy hostami, ktorych intencje maja byc priorytetowe
+    def shortest_paths_priority_first(self, src_ip_address, dst_ip_address):
+        print("\n======== S H O R T E S T   P A T H S   W I T H   P R I O R I T Y ==========\n")
+        # Hosty miedzy ktorymi jest priorytet
+        src_host = self.hosts[self.get_host_index_by_ip_address(src_ip_address)]  # Host
+        dst_host = self.hosts[self.get_host_index_by_ip_address(dst_ip_address)]  # Host
+
+        intents_paths = list()  #  lista tupli typu ( Intent, Graph.shortest )
+
+        # Kopia listy intentów, żeby można było usunąć
+        intents = self.intents
+
+        used_intents = list()
+        #  Najpierw wyznaczymy tylko sciezki dla intencji, ktore sa miedzy hostami: src_host i dst_host
+        for intent in intents:
+            if (intent.inElements[0] == src_host.id) and (intent.outElements[0] == dst_host.id) or (intent.inElements[0] == dst_host.id) and (intent.outElements[0] == src_host.id):
+                intents_paths.append((intent, self.shortest_path(intent)))
+                used_intents.append(intent)
+
+        for used_intent in used_intents:
+            intents.remove(used_intent)
+
+        #  Usuniecie wykorzystanych laczy
+        for intent_path in intents_paths:
+            list_of_nodes = intent_path[1]
+            self.graph.remove_link(list_of_nodes[0], list_of_nodes[len(list_of_nodes)-1])
+
+        #  Wyznaczenie pozostalych sciezek
+        for intent in intents:
+            intents_paths.append((intent, self.shortest_path(intent)))
+
+        #  Wyswietlenie sciezek
+        for intent_path in intents_paths:
+            intent = intent_path[0]
+            path = intent_path[1]
+            print("\nIntent ", intent.inElements[0], " ---> ", intent.outElements[0])
+            src_host = self.hosts[self.get_host_index_by_id(intent.inElements[0])]
+            dst_host = self.hosts[self.get_host_index_by_id(intent.outElements[0])]
+            print(src_host.ipAddresses[0], " ---> ", dst_host.ipAddresses[0])
+            print("Path", path)
+
+    def shortest_path(self, intent):
+        src_host = self.hosts[self.get_host_index_by_id(intent.inElements[0])]
+        dst_host = self.hosts[self.get_host_index_by_id(intent.outElements[0])]
+        src_switch = src_host.connected_switch
+        dst_switch = dst_host.connected_switch
+        return self.graph.shortest(src_switch, dst_switch)
+
+    #  Funkcji podajemy id hosta odczytane z intenta a funkcja zwraca indeks tego hosta z listy self.hosts
+    def get_host_index_by_id(self, id):
         for index in range(len(self.hosts)):
             if self.hosts[index].id == id:
+                return index
+        return None
+
+    #  Funkcji podajemy adres hosta  a funkcja zwraca indeks tego hosta z listy self.hosts
+    def get_host_index_by_ip_address(self, ipAddress):
+        for index in range(len(self.hosts)):
+            if self.hosts[index].ipAddresses[0] == ipAddress:
                 return index
         return None

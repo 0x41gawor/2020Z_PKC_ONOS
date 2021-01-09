@@ -11,4 +11,4 @@ if __name__ == '__main__':
 
     network = Network(list_of_switches, list_of_links, list_of_hosts, list_of_intents)
     network.show()
-    network.shortest_paths()
+    network.shortest_paths_priority_first('10.0.0.2','10.0.0.4')
