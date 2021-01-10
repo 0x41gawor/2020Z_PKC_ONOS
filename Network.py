@@ -60,26 +60,38 @@ class Network:
         src_host = self.hosts[self.get_host_index_by_ip_address(src_ip_address)]  # Host
         dst_host = self.hosts[self.get_host_index_by_ip_address(dst_ip_address)]  # Host
 
+        # sciezka dla kazdej intencji
         intents_paths = list()  #  lista tupli typu ( Intent, Graph.shortest )
 
         # Kopia listy intentów, żeby można było usunąć
         intents = self.intents
 
         used_intents = list()
+
         #  Najpierw wyznaczymy tylko sciezki dla intencji, ktore sa miedzy hostami: src_host i dst_host
         for intent in intents:
-            if (intent.inElements[0] == src_host.id) and (intent.outElements[0] == dst_host.id) or (intent.inElements[0] == dst_host.id) and (intent.outElements[0] == src_host.id):
+            print("\n")
+            intent_src_id = intent.key[0:len(intent.key)//2]
+            intent_dst_id = intent.key[len(intent.key)//2 if len(intent.key)%2 == 0 else ((len(intent.key)//2)+1):]
+
+            if (intent_src_id == src_host.id) and (intent_dst_id == dst_host.id) or (intent_src_id == dst_host.id) and (intent_dst_id == src_host.id):
                 intents_paths.append((intent, self.shortest_path(intent)))
+                print("src_host.id: ", src_host.ipAddresses[0])
+                print("dst_host.id: ", dst_host.ipAddresses[0])
+                print(intent_src_id)
+                print(intent_dst_id)
                 used_intents.append(intent)
 
+        # usuniecie intencji, dla których juz sa sciezki
         for used_intent in used_intents:
             intents.remove(used_intent)
 
         #  Usuniecie wykorzystanych laczy
         for intent_path in intents_paths:
             list_of_nodes = intent_path[1]
-            self.graph.remove_link(list_of_nodes[0], list_of_nodes[len(list_of_nodes)-1])
-
+            for i in range(len(list_of_nodes)-1):
+                print("Chce usunac:", list_of_nodes[i], " ", list_of_nodes[i+1])
+                self.graph.remove_link(list_of_nodes[i], list_of_nodes[i+1])
         #  Wyznaczenie pozostalych sciezek
         for intent in intents:
             intents_paths.append((intent, self.shortest_path(intent)))

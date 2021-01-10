@@ -17,6 +17,9 @@ class Graph:
         if [src, dst] in self.E:
             self.E.remove([src, dst])
             self.E.remove([dst, src])
+            print("Deleted",[src,dst])
+        else:
+            print("DUPA")
 
     def show_nodes(self):
         for v in self.V:
